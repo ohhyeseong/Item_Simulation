@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 계정 테이블
+model Users {
+  userId    Int      @id @default(autoincrement()) @map("userId")
+  username  String   @unique @default("") @map("username") 
+  email     String   @unique @map("email")
+  password  String   @map("password")
+  createdAt DateTime @default(now()) @map("createdAt")
+  updatedAt DateTime @updatedAt @map("updatedAt")
+
+  characterinformations characterinformations? 
+  characters     character[]
+  items  Items[] 
+  inventorys  inventory[] 
+  userHistories UserHistories[] 
+  @@map("Users")
+}
+
+model character {
+  characterId    Int      @id @default(autoincrement()) @map("characterId")
+  userId         Int      @map("userId") // 사용자(Users) 테이블을 참조하는 외래키
+  charactername  String   @map("charactername")
+  stats          Int      @default(500) @map("stats") // 기본 체력
+  attackPower    Int      @default(100) @map("attackPower") // 기본 공격력
+  money          Int      @default(10000) @map("money") // 기본 돈
+  user           Users     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("Character")
+}
+
+// 아이템 테이블
+model Items {
+  ItemId    Int      @id @default(autoincrement()) @map("ItemId")
+  itemCode  String   @unique @default(uuid()) @map("itemCode")
+  userId    Int      @map("userId") // 유저의 테이블을 참조하는 외래키
+  name      String   @map("name")
+  health    Int      @map("health")  
+  strength  Int      @map("strength") 
+  price     Int      @map("price")
+  createdAt DateTime @default(now())
+  
+  // Users 테이블과의 관계 설정
+  Users     Users     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  inventorys inventory[] // 1:N 관계
+  @@map("Item")
+}
+
+// 캐릭터 정보
+model characterinformations {
+  characterinformationId   Int      @id @default(autoincrement()) @map("characterinformationId")
+  userId       Int      @unique @map("userId") // 사용자(Users) 테이블을 참조하는 외래키
+  name         String   @map("name")
+  stats          Int?     @map("stats")
+  age          Int?     @map("age")
+  gender      String    @map("gender")
+  // money       Int   @map("money")
+
+
+  // Users 테이블과 관계를 설정합니다.
+  user Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("UserInfos")
+}
+
+//  인벤토리 테이블
+model inventory {
+  commentId Int      @id @default(autoincrement()) @map("commentId")
+  ItemId    Int      @map("ItemId") // 게시글(Posts) 테이블을 참조하는 외래키
+  userId    Int      @map("userId") // 유저 테이블을 참조하는 외래키
+  characterId    Int      @map("characterId") // 사용자(Users) 테이블을 참조하는 외래키
+  content   String   @map("content")
+  created_At DateTime @default(now()) @map("created_At")
+  updatedAt DateTime @updatedAt @map("updatedAt")
+
+  // item (아이템)테이블과 관계를 설정합니다.
+  item Items @relation(fields: [ItemId], references: [ItemId], onDelete: Cascade)
+  // character 테이블과 관계를 설정합니다.
+  Users Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("Inventory")
+}
+
+
+
+ model UserHistories {
+    userHistoryId String   @id @default(uuid()) @map("userHistoryId")
+    userId        Int      @map("userId") // 사용자(Users) 테이블을 참조하는 외래키
+    changedField  String   @map("changedField") // 변경된 필드명
+    oldValue      String?  @map("oldValue") // 변경 전 값
+    newValue      String   @map("newValue") // 변경 후 값
+    changedAt     DateTime @default(now()) @map("changedAt")
+  
+    // Users 테이블과 관계를 설정합니다.
+    user Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  
+    @@map("UserHistories")
+  }
